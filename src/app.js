@@ -5,6 +5,9 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 
 const app = express();
+
+require("./databases/init.mongo");
+
 app.use(morgan("dev"));
 app.use(helmet());
 app.use(compression());
