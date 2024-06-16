@@ -12,8 +12,6 @@ app.use(morgan("dev"));
 app.use(helmet());
 app.use(compression());
 
-app.get("/", (req, res) => {
-  res.send("Hello world");
-});
+app.use("", require("./routes"));
 
 module.exports = app;
