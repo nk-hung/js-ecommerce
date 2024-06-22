@@ -17,12 +17,13 @@ Content-Type: application/json; charset=utf-8
 User-Agent: VRC
 
 # Qery
-GET /user
+#GET /user
 
 # Post
-POST /user
+POST /shop/signup
 
 {
-  "name":"hungnk",
-  "age": 26
+  "email":"hungnk@gmail.com",
+  "name": "hungnk",
+  "password": "123456"
 }

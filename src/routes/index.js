@@ -6,6 +6,7 @@ router.get("/", (req, res) => {
     message: "Hus hu",
   });
 });
+router.use("/v1/api", require("./access"));
 router.use("/v1/api", require("./shop.route"));
 
 module.exports = router;
