@@ -2,16 +2,12 @@ const jwt = require("jsonwebtoken");
 
 const createTokenPairs = async (payload, publicKey, privateKey) => {
   try {
-    console.log("VAOO!!!!!");
     // create accessToken
-    const accessToken = await jwt.sign(payload, privateKey, {
-      algorithm: "RS256",
+    const accessToken = await jwt.sign(payload, publicKey, {
       expiresIn: "2 days",
     });
 
-    console.log("access tkoen::", accessToken);
     const refreshToken = await jwt.sign(payload, privateKey, {
-      algorithm: "RS256",
       expiresIn: "7 days",
     });
 
@@ -24,6 +20,7 @@ const createTokenPairs = async (payload, publicKey, privateKey) => {
     });
     return { accessToken, refreshToken };
   } catch (error) {
+    console.error("error", error);
     return error;
   }
 };

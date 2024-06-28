@@ -34,29 +34,42 @@ class AccessService {
       });
 
       if (newShop) {
-        const publicKey = crypto.randomBytes(64).toString("hex");
-        const privateKey = crypto.randomBytes(64).toString("hex");
-
-        console.table({ publicKey, privateKey });
-        const keyStores = await KeyTokenService.createKeyToken({
+        const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
+          modulusLength: 4096,
+          publicKeyEncoding: {
+            type: "pkcs1",
+            format: "pem",
+          },
+          privateKeyEncoding: {
+            type: "pkcs8",
+            format: "pem",
+          },
+        });
+        // PublicKey phải được lưu vào DB còn privateKey thì không
+        // Public Key phải chuyển sang dạnh HashString vì RSA không thể lưu trực tiếp vào MongoDB
+        // Mà chúng ta phải chuyển về dạng JSON string để lưu vào
+        // Khi chúng ta lấy public từ Mongo ra thì phải chuyển về publicKey
+        const publicKeyString = await KeyTokenService.createKeyToken({
           userId: newShop._id,
           publicKey,
-          privateKey,
         });
 
-        if (!keyStores) {
+        if (!publicKeyString) {
           return {
             code: "xxx",
-            message: "keyStores error",
+            message: "Shop already registered",
           };
         }
 
+        const publicKeyObject = crypto.createPublicKey(publicKeyString);
+
         const tokens = await createTokenPairs(
           { userId: newShop._id, email },
-          publicKey,
+          publicKeyObject,
           privateKey,
         );
 
+        console.log("tokens:::", tokens);
         return {
           code: 201,
           metadata: {
