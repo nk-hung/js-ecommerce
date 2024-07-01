@@ -21,10 +21,17 @@ x-api-key: 27fdfbded32c2dceb8d340db51319d1e151e4e512fc2b8a9985ca56e7d7bf646327da
 #GET /user
 
 # Post
-POST shop/signup
+#POST shop/signup
+#
+#{
+#  "email":"hungnk03@gmail.com",
+#  "name": "hungnk03",
+#  "password": "123456"
+#}
 
+# Post
+POST shop/login
 {
-  "email":"hungnk01@gmail.com",
-  "name": "hungnk01",
+  "email":"hungnk03@gmail.com",
   "password": "123456"
 }
