@@ -5,6 +5,7 @@ const AccessService = require("../services/access.service");
 
 class AccessController {
   async logout(req, res) {
+    console.log("VAO", req.keyStore);
     new SuccessResponse({
       message: "Logout",
       metadata: await AccessService.logout(req.keyStore),
@@ -25,6 +26,13 @@ class AccessController {
       options: {
         limit: 12,
       },
+    }).send(res);
+  }
+
+  async refreshToken(req, res, next) {
+    new SuccessResponse({
+      message: "Get token success",
+      metadata: await AccessService.handlerRefreshToken(req.body.refreshToken),
     }).send(res);
   }
 }

@@ -1,11 +1,14 @@
 const bcrypt = require("bcrypt");
-const crypto = require("crypto");
 
 const shopModel = require("../models/shop.model");
 const KeyTokenService = require("./keytoken.service");
-const { createTokenPairs } = require("../auth/authUtils");
+const { createTokenPairs, verifyJWT } = require("../auth/authUtils");
 const { getInfoData, generateKeyPair } = require("../utils");
-const { BadRequestError, AuthFailureError } = require("../core/error.response");
+const {
+  BadRequestError,
+  AuthFailureError,
+  ForbiddenError,
+} = require("../core/error.response");
 const { findByEmail } = require("./shop.service");
 
 const RoleShop = {
@@ -16,6 +19,49 @@ const RoleShop = {
 };
 
 class AccessService {
+  static handlerRefreshToken = async (rt) => {
+    const foundToken = await KeyTokenService.findByRefreshTokenUsed(rt);
+    if (foundToken) {
+      // decode ra xem user nao dang dung access token cu
+      const { userId, email } = verifyJWT(rt, foundToken.privateKey);
+      console.log({ userId, email });
+      await KeyTokenService.deleteKeyById(userId);
+      throw new ForbiddenError("Something wrong happened!! Please relogin");
+    }
+
+    const holderToken = await KeyTokenService.findByRefreshToken(rt);
+    if (!holderToken) throw new AuthFailureError("Shop not register!!");
+    console.log("holderToken:::", holderToken);
+    // verify token
+
+    const { userId, email } = verifyJWT(rt, holderToken.privateKey);
+    // check userId
+    const foundShop = await findByEmail({ email });
+    if (!foundShop) throw new AuthFailureError("Shop not register!!");
+
+    const tokens = await createTokenPairs(
+      { userId, email },
+      holderToken.publicKey,
+      holderToken.privateKey,
+    );
+
+    console.log("tokens::", tokens);
+    // update token
+    await holderToken.updateOne({
+      $set: {
+        refreshToken: tokens.refreshToken,
+      },
+      $addToSet: {
+        refreshTokensUsed: foundShop.refreshToken,
+      },
+    });
+
+    return {
+      user: { userId, email },
+      tokens,
+    };
+  };
+
   static logout = async (keyStore) => {
     return await KeyTokenService.removeKeyById(keyStore._id);
   };
@@ -26,7 +72,7 @@ class AccessService {
    * 4. Generate tokens
    * 5. get data return login
    * */
-  static login = async ({ email, password, refreshToken = null }) => {
+  static login = async ({ email, password }) => {
     const foundShop = await findByEmail({ email });
     if (!foundShop) throw new BadRequestError("Shop not registed!");
 
@@ -37,7 +83,11 @@ class AccessService {
 
     const { _id: userId } = foundShop;
 
-    const tokens = await createTokenPairs({ userId }, publicKey, privateKey);
+    const tokens = await createTokenPairs(
+      { userId, email },
+      publicKey,
+      privateKey,
+    );
 
     await KeyTokenService.createKeyToken({
       publicKey,
@@ -95,7 +145,10 @@ class AccessService {
       return {
         code: 201,
         metadata: {
-          shop: getInfoData({ fields: ["name", "_id"], object: newShop }),
+          shop: getInfoData({
+            fields: ["name", "_id", "email"],
+            object: newShop,
+          }),
           tokens,
         },
       };
